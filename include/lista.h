@@ -10,19 +10,10 @@ typedef struct nolista{
     struct nolista *prox;            /* Ponteiro para o próximo nó da lista */
 } NoLista;
 
-/* Estrutura para armazenar mensagens com origem, destino e conteúdo */
-typedef struct sms{
-    int id;                          /* Identificador único da mensagem */
-    int id_origem;                   /* ID do utilizador que originou a mensagem */
-    int id_destino;                  /* ID do utilizador destinatário da mensagem */
-    int total;                       /* Número de caracteres na mensagem */
-    char mensagem[TAM_SMS];          /* Conteúdo da mensagem (até 1000 caracteres) */
-    struct sms *prox;                /* Ponteiro para a próxima mensagem (lista encadeada) */
-} Mensagens;
-
 /* Estrutura da lista que armazena IDs de encomendas */
 typedef struct lista{
     NoLista *id_lista;               /* Ponteiro para o primeiro nó da lista de IDs */
+    int total;
 } Lista;
 
 /* Inicializa uma lista vazia, preparando-a para receber elementos */
@@ -39,5 +30,8 @@ Lista *lista_inserir(Lista *lista, int idEncomenda);
 /* Remove um ID de encomenda específico da lista */
 /* Retorna a lista atualizada sem o elemento removido */
 Lista *lista_remover(Lista *lista, int idEncomenda);
+
+/* Libera toda a memória alocada para a lista e seus nós */
+void lista_liberar(Lista *lista);
 
 #endif

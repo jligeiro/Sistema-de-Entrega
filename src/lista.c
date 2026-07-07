@@ -14,6 +14,7 @@
 /* Inicializa uma lista vazia. */
 void lista_inicializar(Lista *lista) {
     lista->id_lista = NULL;
+    lista->total = 0;
 }
 
 /* Verifica se a lista está vazia. */
@@ -33,11 +34,13 @@ Lista *lista_inserir(Lista *lista, int idEncomenda) {
 
     if (lista_vazia(lista)) {
         lista->id_lista = novo;
+        lista->total++;
     } else {
         NoLista *aux = lista->id_lista;
         while (aux->prox)
-            aux = aux->prox;
+        aux = aux->prox;
         aux->prox = novo;
+        lista->total++;
     }
 
     return lista;
@@ -59,4 +62,12 @@ Lista *lista_remover(Lista *lista, int idEncomenda) {
 
     free(remover);
     return lista;
+}
+void lista_liberar(Lista *lista){
+    while (!lista_vazia(lista)){
+        NoLista *atual = lista->id_lista;
+        lista->id_lista = atual->prox;
+        free(atual);
+    }
+    lista->total = 0;
 }

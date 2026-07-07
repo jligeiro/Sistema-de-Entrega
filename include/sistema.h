@@ -30,6 +30,9 @@ void imprimir_encomenda(void *dado);
 /* Função auxiliar para imprimir dados de uma encomenda do ponto de vista do cliente */
 void imprimir_encomenda_cliente(void *dado);
 
+/* Função auxiliar para imprimir dados de uma encomenda do ponto de vista do vendedor */
+void imprimir_encomenda_vendedor(void *dado);
+
 /* Inicializa o sistema inteiro, preparando todas as estruturas de dados */
 void sistema_inicializar(Sistema *sistema);
 
@@ -72,8 +75,11 @@ void consultar_rota(Sistema *sistema);
 /* Realiza uma busca genérica no sistema (por clientes, vendedores ou encomendas) */
 void pesquisar(Sistema *sistema);
 
-/* Lista todos os produtos disponíveis (encomendas) do sistema */
+/* Lista todos os produtos disponíveis (encomendas) do sistema*/
 void listar_produtos(HashTable *encomendas, Lista *idencomendas);
+
+/* Lista todos os produtos disponíveis (encomendas) de um vendedor*/
+void listar_produtos_vendedor(HashTable *encomendas, Lista *idencomendas, int idvendedor);
 
 /* Lista todas as encomendas de um cliente específico */
 /* Retorna quantidade de encomendas encontradas */

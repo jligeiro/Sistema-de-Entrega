@@ -68,9 +68,23 @@ void imprimir_encomenda(void *dado) {
  */
 void imprimir_encomenda_cliente(void *dado) {
     Encomenda *encomenda = dado;
-    printf("ID: %d | Produto: %s | Preco: %lf |Vendedor: %d | Origem: %d | Estado: %s | %s\n",
+    printf("ID: %d | Produto: %s | Preco: %.2lf |Vendedor: %d | Origem: %d | Estado: %s | %s\n",
            encomenda->id, encomenda->nome_produto, encomenda->preco, encomenda->idEntregador,
            encomenda->origem,estado_para_texto(encomenda->estado), encomenda->descricao);
+}
+
+/*
+ * FUNÇÃO: imprimir_encomenda_vendedor
+ * PARÂMETRO: void *dado - apontador genérico para uma Encomenda
+ * RETORNO: void
+ * DESCRIÇÃO: Exibe informações simplificadas de uma encomenda
+ *            Versão para visualização por vendedor (menos dados)
+ */
+void imprimir_encomenda_vendedor(void *dado) {
+    Encomenda *encomenda = dado;
+    printf("ID: %d | Produto: %s | Preco: %.2lf |Vendedor: %d | Origem: %d | Estado: %s\n",
+           encomenda->id, encomenda->nome_produto, encomenda->preco, encomenda->idEntregador,
+           encomenda->origem,estado_para_texto(encomenda->estado));
 }
 
 /*
@@ -284,8 +298,6 @@ void cadastrar_vendedor(Sistema *sistema) {
  * DESCRIÇÃO: Cria uma nova encomenda no sistema (por vendedor)
  */
 void criar_encomenda(Sistema *sistema, Vendedor *vendedor) {
-    srand(time(NULL));
-
     Encomenda *encomenda = malloc(sizeof(Encomenda));
     if (encomenda == NULL) {
         printf("Erro: memoria insuficiente.\n");
@@ -295,17 +307,20 @@ void criar_encomenda(Sistema *sistema, Vendedor *vendedor) {
     ler_texto("Produto: ", encomenda->nome_produto, TAM_NOME);
     encomenda->preco = (double)ler_inteiro("Preco: ");
 
-    while (true){
-        encomenda->id = rand()%TAM_HASH;
-        if (hash_buscar(&sistema->encomendas, encomenda->id) == NULL) {
-            break;
-        }
+    int next_id = 0;
+    while (hash_buscar(&sistema->encomendas, next_id) != NULL) {
+        next_id++;
     }
+    encomenda->id = next_id;
 
     ler_texto("Descricao: ", encomenda->descricao, TAM_TEXTO);
     grafo_listar(&sistema->rotas);
     encomenda->origem = ler_inteiro("ID do local de origem: ");
     encomenda->idEntregador = vendedor->id;
+    encomenda->estado = LIVRE;
+    encomenda->idCliente = -1;
+    encomenda->prioridade = 0;
+    encomenda->destino = -1;
     encomenda->comprado = 0;
 
     if (hash_inserir(&sistema->encomendas, encomenda->id, encomenda)) {
@@ -349,8 +364,12 @@ void criar_encomenda_cliente(Sistema *sistema, int idCliente) {
     if (fila_enfileirar(&sistema->pendentes, encomenda->id)) {
         printf("Encomenda criada com sucesso e enviada para a fila da empresa.\n");
     } else {
+        encomenda->idCliente = -1;
+        encomenda->destino = -1;
+        encomenda->prioridade = 0;
+        encomenda->estado = LIVRE;
+        encomenda->comprado = 0;
         printf("Erro ao encomendar.\n");
-        free(encomenda);
     }
 }
 
@@ -526,17 +545,36 @@ void pesquisar(Sistema *sistema){
  * DESCRIÇÃO: Lista todos os produtos/encomendas disponíveis para compra
  */
 void listar_produtos(HashTable *encomendas, Lista *idencomendas){
-    if (!idencomendas->id_lista){
+    if (lista_vazia(idencomendas)){
         printf("Sem produtos a venda\n");
         return;
     }
     NoLista *aux = idencomendas->id_lista;
     while (aux){
-        int indice = funcao_hash(aux->id);
-        NoHash *atual = encomendas->tabela[indice];
-        while (atual){
-            imprimir_encomenda_cliente(atual->dado);
-            atual = atual->proximo;
+        Encomenda *encomenda = hash_buscar(encomendas, aux->id);
+        if (encomenda != NULL && encomenda->comprado == 0) {
+            imprimir_encomenda_cliente(encomenda);
+        }
+        aux = aux->prox;
+    }
+}
+
+/*
+ * FUNÇÃO: listar_produtos_vendedor
+ * PARÂMETROS: HashTable *encomendas, Lista *idencomendas, int idvendedor
+ * RETORNO: void
+ * DESCRIÇÃO: Lista todos os produtos a venda de um vendedor
+ */
+void listar_produtos_vendedor(HashTable *encomendas, Lista *idencomendas, int idvendedor){
+    if (lista_vazia(idencomendas)){
+        printf("Sem produtos a venda\n");
+        return;
+    }
+    NoLista *aux = idencomendas->id_lista;
+    while (aux){
+        Encomenda *encomenda = hash_buscar(encomendas, aux->id);
+        if (encomenda != NULL && encomenda->idEntregador == idvendedor) {
+            imprimir_encomenda_vendedor(encomenda);
         }
         aux = aux->prox;
     }
@@ -751,44 +789,43 @@ void listar_dados(Sistema *sistema) {
  * DESCRIÇÃO: Admin aprova/rejeita registos de clientes pendentes
  */
 void confirmado_cliente(HashTable *hash, Fila *confirmacoes){
-    NoFila *aux = confirmacoes->inicio;
-    if (!aux){
+    if (fila_vazia(confirmacoes)){
         printf("Sem contas por verificar.\n");
         return;
     }
-    while (aux){
-        int indice = funcao_hash(aux->id);
-        NoHash *atual = hash->tabela[indice];
-        while (atual){
-            Cliente *cliente = atual->dado;
-            if (cliente->ativo == DESATIVO){
-                system("cls");
-                imprimir_cliente((void *)cliente);
-                printf("\nDeseja validar cadastro?\n1. SIM - 2. NAO - 3 - SAIR\n");
-                ll t = ler_inteiro("Opcao: ");
-                system("cls");
-                if (t == 1){
-                    cliente->ativo = ATIVO;
-                    fila_desenfileirar(confirmacoes, &aux->id);
-                    printf("Conta \"%s\" confirmada.\n", cliente->username);
-                    Sleep(2000);
-                }else if (t == 2){
-                    cliente->ativo = -1;
-                    fila_desenfileirar(confirmacoes, &aux->id);
-                    printf("Conta \"%s\" negada.\n", cliente->username);
-                    Sleep(2000);
-                }
-                else if (t == 3){
-                    return;
-                }
-                else{
-                    printf("Opcao invalida.\n");
-                    Sleep(2000);
-                }
-            }
-            atual = atual->proximo;
+    while (!fila_vazia(confirmacoes)){
+        int id = confirmacoes->inicio->id;
+        Cliente *cliente = hash_buscar(hash, id);
+
+        if (cliente == NULL || cliente->ativo != DESATIVO){
+            int ign;
+            fila_desenfileirar(confirmacoes, &ign);
+            continue;
         }
-        aux = aux->proximo;
+
+        system("cls");
+        imprimir_cliente(cliente);
+        printf("\nDeseja validar cadastro?\n1. SIM - 2. NAO - 3 - SAIR\n");
+        ll t = ler_inteiro("Opcao: ");
+        system("cls");
+        if (t == 1){
+            cliente->ativo = ATIVO;
+            int ign;
+            fila_desenfileirar(confirmacoes, &ign);
+            printf("Conta \"%s\" confirmada.\n", cliente->username);
+            Sleep(2000);
+        } else if (t == 2){
+            cliente->ativo = NEGADO;
+            int ign;
+            fila_desenfileirar(confirmacoes, &ign);
+            printf("Conta \"%s\" negada.\n", cliente->username);
+            Sleep(2000);
+        } else if (t == 3){
+            return;
+        } else {
+            printf("Opcao invalida.\n");
+            Sleep(2000);
+        }
     }
 }
 
@@ -799,45 +836,43 @@ void confirmado_cliente(HashTable *hash, Fila *confirmacoes){
  * DESCRIÇÃO: Admin aprova/rejeita registos de vendedores pendentes
  */
 void confirmado_vendedor(HashTable *hash, Fila *confirmacoes){
-    NoFila *aux = confirmacoes->inicio;
-    if (!aux){
+    if (fila_vazia(confirmacoes)){
         printf("Sem contas por verificar.\n");
         return;
     }
-    while (aux){
-        int indice = funcao_hash(aux->id);
-        NoHash *atual = hash->tabela[indice];
-        while (atual){
-            Vendedor *vendedor = atual->dado;
-            if (vendedor->ativo == DESATIVO){
-                system("cls");
-                imprimir_entregador((void *)vendedor);
-                printf("\nDeseja validar cadastro?\n1. SIM - 2. NAO - 3. SAIR\n");
-                ll t = ler_inteiro("Opcao: ");
-                system("cls");
-                if (t == 1){
-                    vendedor->ativo = ATIVO;
-                    fila_desenfileirar(confirmacoes, &aux->id);
-                    printf("Conta \"%s\" confirmada.\n", vendedor->username);
-                    Sleep(2000);
-                }else if (t == 2){
-                    vendedor->ativo = -1;
-                    fila_desenfileirar(confirmacoes, &aux->id);
-                    printf("Conta \"%s\" negado.\n", vendedor->username);
-                    Sleep(2000);
-                }
-                else if (t == 3){
-                    free(vendedor);
-                    return;
-                }
-                else{
-                    printf("Opcao invalida.\n");
-                    Sleep(2000);
-                }
-            }
-            atual = atual->proximo;
+    while (!fila_vazia(confirmacoes)){
+        int id = confirmacoes->inicio->id;
+        Vendedor *vendedor = hash_buscar(hash, id);
+
+        if (vendedor == NULL || vendedor->ativo != DESATIVO){
+            int ign;
+            fila_desenfileirar(confirmacoes, &ign);
+            continue;
         }
-        aux = aux->proximo;
+
+        system("cls");
+        imprimir_entregador(vendedor);
+        printf("\nDeseja validar cadastro?\n1. SIM - 2. NAO - 3. SAIR\n");
+        ll t = ler_inteiro("Opcao: ");
+        system("cls");
+        if (t == 1){
+            vendedor->ativo = ATIVO;
+            int ign;
+            fila_desenfileirar(confirmacoes, &ign);
+            printf("Conta \"%s\" confirmada.\n", vendedor->username);
+            Sleep(2000);
+        } else if (t == 2){
+            vendedor->ativo = NEGADO;
+            int ign;
+            fila_desenfileirar(confirmacoes, &ign);
+            printf("Conta \"%s\" negada.\n", vendedor->username);
+            Sleep(2000);
+        } else if (t == 3){
+            return;
+        } else {
+            printf("Opcao invalida.\n");
+            Sleep(2000);
+        }
     }
 }
 
@@ -848,7 +883,10 @@ void confirmado_vendedor(HashTable *hash, Fila *confirmacoes){
  * DESCRIÇÃO: Admin adiciona novos locais ou rotas ao sistema
  */
 void registar_rotas(Sistema *sistema){
+    char endereco[TAM_TEXTO];
     ll opcao;
+    int origem;
+    int destino;
     Grafo *rotas = &sistema->rotas;
     for (int i = 0; i < rotas->total; i++) {
         printf("[%d] %s\n", rotas->locais[i].id, rotas->locais[i].nome);
@@ -862,7 +900,6 @@ void registar_rotas(Sistema *sistema){
 
     switch(opcao){
         case 1:
-            char endereco[TAM_TEXTO];
             ler_texto("local: ", endereco, TAM_TEXTO);
             if (!grafo_verificar_local(rotas, endereco)){
                 system("cls");
@@ -901,12 +938,12 @@ void registar_rotas(Sistema *sistema){
                 printf("Este local ja faz parte dos nossos registos.\n"); 
             }
             break;
-        case 2:
+        case 2:{
             for (int i = 0; i < rotas->total; i++) {
                 printf("[%d] %s\n", rotas->locais[i].id, rotas->locais[i].nome);
             }
-            int origem = ler_inteiro("Origem: ");
-            int destino = ler_inteiro("Destino: ");
+            origem = ler_inteiro("Origem: ");
+            destino = ler_inteiro("Destino: ");
             while (true){
                 int distancia = ler_inteiro("Informe a distancia: ");
                 if (distancia <= 0){
@@ -922,6 +959,7 @@ void registar_rotas(Sistema *sistema){
                 }
             }
             break;
+        }
         case 0:
             printf("Voltando...\n");
             break;
@@ -1058,10 +1096,11 @@ void menu_vendedor(Sistema *sistema, Vendedor *vendedor) {
         system("cls");
         printf("===== AREA DO VENDEDOR: %s =====\n", vendedor->nome);
         printf("1. Criar produto\n");
-        printf("2. Ver minhas entregas\n");
-        printf("3. Atualizar estado da entrega\n");
-        printf("4. Consultar rota de uma entrega\n");
-        printf("5. Alterar disponibilidade\n");
+        printf("2. Ver meus produtos\n");
+        printf("3. Ver minhas entregas\n");
+        printf("4. Atualizar estado da entrega\n");
+        printf("5. Consultar rota de uma entrega\n");
+        printf("6. Alterar disponibilidade\n");
         printf("0. Voltar\n");
         opcao = ler_inteiro("Opcao: ");
         system("cls");
@@ -1070,16 +1109,20 @@ void menu_vendedor(Sistema *sistema, Vendedor *vendedor) {
                 criar_encomenda(sistema, vendedor);
                 break;
             case 2:
-                listar_encomendas_entregador(sistema, idvendedor);
+                listar_produtos_vendedor(&sistema->encomendas, &sistema->id_encomendas, idvendedor);
+                Sleep(3000);
                 break;
             case 3:
-                atualizar_estado_entregador(sistema, idvendedor);
+                listar_encomendas_entregador(sistema, idvendedor);
                 break;
             case 4:
+                atualizar_estado_entregador(sistema, idvendedor);
+                break;
+            case 5:
                 consultar_rota_encomenda_entregador(sistema, idvendedor);
                 Sleep(3000);
                 break;
-            case 5:
+            case 6:
                 alterar_disponibilidade_entregador(sistema, idvendedor);
                 break;
             case 0:
@@ -1296,5 +1339,8 @@ void sistema_liberar(Sistema *sistema) {
     hash_liberar(&sistema->vendedores);
     hash_liberar(&sistema->encomendas);
     fila_liberar(&sistema->pendentes);
+    fila_liberar(&sistema->confirmacoes_clientes);
+    fila_liberar(&sistema->confirmacoes_vendedor);
+    lista_liberar(&sistema->id_encomendas);
     grafo_liberar(&sistema->rotas);
 }

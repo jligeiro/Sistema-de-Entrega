@@ -84,6 +84,5 @@ void fila_listar(Fila *fila) {
 /* Liberta a memória ocupada pela fila. */
 void fila_liberar(Fila *fila) {
     int id;
-    while (fila_desenfileirar(fila, &id)) {
-    }
+    while (fila_desenfileirar(fila, &id));
 }

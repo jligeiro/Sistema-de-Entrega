@@ -117,11 +117,19 @@ void limpar_dados_carregaveis(Sistema *sistema) {
     hash_liberar(&sistema->vendedores);
     hash_liberar(&sistema->encomendas);
     fila_liberar(&sistema->pendentes);
+    fila_liberar(&sistema->confirmacoes_clientes);
+    fila_liberar(&sistema->confirmacoes_vendedor);
+    lista_liberar(&sistema->id_encomendas);
+    grafo_liberar(&sistema->rotas);
     
     hash_inicializar(&sistema->clientes, TIPO_CLIENTE);
     hash_inicializar(&sistema->vendedores, TIPO_VENDEDOR);
     hash_inicializar(&sistema->encomendas, TIPO_ENCOMENDA);
     fila_inicializar(&sistema->pendentes);
+    fila_inicializar(&sistema->confirmacoes_clientes);
+    fila_inicializar(&sistema->confirmacoes_vendedor);
+    lista_inicializar(&sistema->id_encomendas);
+    grafo_inicializar(&sistema->rotas);
 }
 
 /* Carrega clientes a partir do ficheiro de dados. */
@@ -209,9 +217,11 @@ void carregar_encomendas(Sistema *sistema) {
         if (sscanf(linha, "%79[^;];%d;%d;%d;%119[^;];%d;%d;%d;%lf;%d",
                    encomenda->nome_produto, &encomenda->id, &encomenda->idCliente, &encomenda->idEntregador,
                    encomenda->descricao, &encomenda->origem, &encomenda->destino,
-                   &encomenda->prioridade, &encomenda->preco, &estado) == 8) {
+                   &encomenda->prioridade, &encomenda->preco, &estado) == 10) {
             encomenda->estado = (EstadoEncomenda)estado;
+            encomenda->comprado = (encomenda->estado != LIVRE);
             hash_inserir(&sistema->encomendas, encomenda->id, encomenda);
+            lista_inserir(&sistema->id_encomendas, encomenda->id);
             if (encomenda->estado == PENDENTE) {
                 fila_enfileirar(&sistema->pendentes, encomenda->id);
             }
@@ -228,12 +238,18 @@ void carregar_rotas(Sistema *sistema){
     FILE *arquivo = fopen("rotas.txt", "r");
     char linha[350];
 
+    if (arquivo == NULL) {
+        return;
+    }
+
     while (fgets(linha, sizeof(linha), arquivo) != NULL){
         char *token = strtok(linha, ";");
+        if (token == NULL) continue;
         int id = atoi(token);
 
         token = strtok(NULL, ";");
-        char nome[80];
+        if (token == NULL) continue;
+        char nome[200];
         strcpy(nome, token);
 
         grafo_adicionar_local(&sistema->rotas, nome);
@@ -248,7 +264,6 @@ void carregar_rotas(Sistema *sistema){
 
             grafo_adicionar_rota(&sistema->rotas, id, destino, peso);
         }
-
     }
     fclose(arquivo);
 }

@@ -25,6 +25,7 @@ typedef enum {
 
 /* Enumeração para o estado de uma encomenda ao longo do seu ciclo de vida */
 typedef enum {
+    LIVRE = -1,                      /* Encomenda está livre para compra*/
     PENDENTE = 0,                    /* Encomenda aguardando atribuição a entregador */
     EM_TRANSITO = 1,                 /* Encomenda está sendo transportada */
     ENTREGUE = 2,                    /* Encomenda foi entregue com sucesso */
@@ -64,6 +65,8 @@ typedef struct{
 /* Estrutura que armazena informações completas de uma encomenda */
 typedef struct {
     char nome_produto[TAM_NOME];     /* Nome descritivo do produto na encomenda */
+    char *telefone_vendedor;         /* telefone do vendedor*/
+    char *telefone_cliente;          /* telefone do cliente*/
     int id;                          /* Identificador único da encomenda */
     int idCliente;                   /* ID do cliente que encomendou */
     int idEntregador;                /* ID do vendedor/entregador atribuído */
