@@ -3,5 +3,6 @@
 2;maianga;3;5;1;8
 3;mutamba;4;14;2;5
 4;talatona;6;7;0;10;3;14
-5;camama;0;8
+5;camama;7;10;0;8
 6;gamek;4;7
+7;viana;5;10

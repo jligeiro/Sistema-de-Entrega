@@ -55,10 +55,10 @@ void guardar_encomendas(HashTable *encomendas, FILE *arquivo) {
         no = encomendas->tabela[i];
         while (no != NULL) {
             encomenda = no->dado;
-            fprintf(arquivo, "%s;%d;%d;%d;%s;%d;%d;%d;%lf;%d\n",
+            fprintf(arquivo, "%s;%d;%d;%d;%s;%d;%d;%d;%lf;%d;%ld;%d\n",
                     encomenda->nome_produto, encomenda->id, encomenda->idCliente, encomenda->idEntregador,
                     encomenda->descricao, encomenda->origem, encomenda->destino,
-                    encomenda->prioridade, encomenda->preco, encomenda->estado);
+                    encomenda->prioridade, encomenda->preco, encomenda->estado, encomenda->qtd, encomenda->idProduto);
             no = no->proximo;
         }
     }
@@ -214,14 +214,35 @@ void carregar_encomendas(Sistema *sistema) {
             break;
         }
 
-        if (sscanf(linha, "%79[^;];%d;%d;%d;%119[^;];%d;%d;%d;%lf;%d",
+        if (sscanf(linha, "%79[^;];%d;%d;%d;%119[^;];%d;%d;%d;%lf;%d;%ld;%d",
+                   encomenda->nome_produto, &encomenda->id, &encomenda->idCliente, &encomenda->idEntregador,
+                   encomenda->descricao, &encomenda->origem, &encomenda->destino,
+                   &encomenda->prioridade, &encomenda->preco, &estado, &encomenda->qtd, &encomenda->idProduto) == 12) {
+            encomenda->estado = (EstadoEncomenda)estado;
+            encomenda->comprado = (encomenda->estado != LIVRE);
+            encomenda->qtd_cliente.qtd = (encomenda->idCliente == -1) ? 0 : encomenda->qtd;
+            encomenda->qtd_cliente.id_cliente = (encomenda->idCliente == -1) ? -1 : encomenda->idCliente;
+            hash_inserir(&sistema->encomendas, encomenda->id, encomenda);
+            if (encomenda->idCliente == -1 && encomenda->idProduto == -1) {
+                lista_inserir(&sistema->id_encomendas, encomenda->id);
+            }
+            if (encomenda->estado == PENDENTE) {
+                fila_enfileirar(&sistema->pendentes, encomenda->id);
+            }
+        } else if (sscanf(linha, "%79[^;];%d;%d;%d;%119[^;];%d;%d;%d;%lf;%d",
                    encomenda->nome_produto, &encomenda->id, &encomenda->idCliente, &encomenda->idEntregador,
                    encomenda->descricao, &encomenda->origem, &encomenda->destino,
                    &encomenda->prioridade, &encomenda->preco, &estado) == 10) {
             encomenda->estado = (EstadoEncomenda)estado;
             encomenda->comprado = (encomenda->estado != LIVRE);
+            encomenda->qtd = (encomenda->idCliente == -1) ? 1 : 0;
+            encomenda->idProduto = -1;
+            encomenda->qtd_cliente.qtd = 0;
+            encomenda->qtd_cliente.id_cliente = -1;
             hash_inserir(&sistema->encomendas, encomenda->id, encomenda);
-            lista_inserir(&sistema->id_encomendas, encomenda->id);
+            if (encomenda->idCliente == -1 && encomenda->idProduto == -1) {
+                lista_inserir(&sistema->id_encomendas, encomenda->id);
+            }
             if (encomenda->estado == PENDENTE) {
                 fila_enfileirar(&sistema->pendentes, encomenda->id);
             }

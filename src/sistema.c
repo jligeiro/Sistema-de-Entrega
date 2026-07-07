@@ -54,9 +54,11 @@ void imprimir_entregador(void *dado) {
  */
 void imprimir_encomenda(void *dado) {
     Encomenda *encomenda = dado;
-    printf("ID: %d | Produto: %s | Preco: %.2lf | Vendedor: %d | Cliente: %d | Origem: %d | Destino: %d | Prioridade: %d| Estado: %s | %s\n\n",
+    int quantidade = (encomenda->idProduto == -1) ? (int)encomenda->qtd : (int)encomenda->qtd_cliente.qtd;
+    printf("ID: %d | Produto: %s | Preco: %.2lf | Vendedor: %d | Cliente: %d | Origem: %d | Destino: %d | Prioridade: %d| Quantidade: %d | Estado: %s | %s\n\n",
            encomenda->id, encomenda->nome_produto, encomenda->preco, encomenda->idEntregador,
-           encomenda->idCliente, encomenda->origem, encomenda->destino, encomenda->prioridade, estado_para_texto(encomenda->estado), encomenda->descricao);
+           encomenda->idCliente, encomenda->origem, encomenda->destino, encomenda->prioridade,
+           quantidade, estado_para_texto(encomenda->estado), encomenda->descricao);
 }
 
 /*
@@ -307,6 +309,8 @@ void criar_encomenda(Sistema *sistema, Vendedor *vendedor) {
     ler_texto("Produto: ", encomenda->nome_produto, TAM_NOME);
     encomenda->preco = (double)ler_inteiro("Preco: ");
 
+    encomenda->qtd = ler_inteiro("Quantidade: ");
+
     int next_id = 0;
     while (hash_buscar(&sistema->encomendas, next_id) != NULL) {
         next_id++;
@@ -318,15 +322,19 @@ void criar_encomenda(Sistema *sistema, Vendedor *vendedor) {
     encomenda->origem = ler_inteiro("ID do local de origem: ");
     encomenda->idEntregador = vendedor->id;
     encomenda->estado = LIVRE;
+    encomenda->qtd_cliente.qtd = 0;
+    encomenda->qtd_cliente.id_cliente = -1;
     encomenda->idCliente = -1;
+    encomenda->idProduto = -1;
     encomenda->prioridade = 0;
     encomenda->destino = -1;
+    encomenda->telefone_vendedor = vendedor->telefone;
+    encomenda->telefone_cliente = NULL;
     encomenda->comprado = 0;
 
     if (hash_inserir(&sistema->encomendas, encomenda->id, encomenda)) {
-        fila_enfileirar(&sistema->pendentes, encomenda->id);
         lista_inserir(&sistema->id_encomendas, encomenda->id);
-        printf("Encomenda criada e colocada na fila de pendentes.\n");
+        printf("Produto registado com sucesso.\n");
     } else {
         printf("Erro ao criar encomenda.\n");
         free(encomenda);
@@ -349,26 +357,71 @@ void criar_encomenda_cliente(Sistema *sistema, int idCliente) {
     listar_produtos(&sistema->encomendas, &sistema->id_encomendas);
     id = ler_inteiro("ID da encomenda: ");
 
-    Encomenda *encomenda = hash_buscar(&sistema->encomendas, id);
-    if (!encomenda){
+    Encomenda *produto = hash_buscar(&sistema->encomendas, id);
+    if (!produto){
         printf("Erro: Nao existe encomenda com este ID.\n");
         return;
     }
-    encomenda->idCliente = idCliente;
-    grafo_listar(&sistema->rotas);
-    encomenda->destino = ler_inteiro("ID do local de destino: ");
-    encomenda->prioridade = ler_inteiro("Prioridade (1 baixa, 2 media, 3 alta): ");
-    encomenda->estado = PENDENTE;
-    encomenda->comprado = 1;
 
-    if (fila_enfileirar(&sistema->pendentes, encomenda->id)) {
+    if (produto->idCliente != -1 || produto->idProduto != -1){
+        printf("Erro: este registo nao representa um produto disponivel.\n");
+        return;
+    }
+
+    if (produto->qtd <= 0){
+        printf("Produto sem stock.\n");
+        return;
+    }
+
+    ll quantidade = ler_inteiro("Quantidade desejada: ");
+    if (quantidade <= 0){
+        printf("Quantidade invalida.\n");
+        return;
+    }
+
+    if (quantidade > produto->qtd){
+        printf("Stock insuficiente. Disponivel: %ld\n", produto->qtd);
+        return;
+    }
+
+    int next_id = 0;
+    while (hash_buscar(&sistema->encomendas, next_id) != NULL) {
+        next_id++;
+    }
+
+    Encomenda *pedido = malloc(sizeof(Encomenda));
+    if (pedido == NULL) {
+        printf("Erro: memoria insuficiente.\n");
+        return;
+    }
+
+    memset(pedido, 0, sizeof(*pedido));
+    pedido->id = next_id;
+    strcpy(pedido->nome_produto, produto->nome_produto);
+    pedido->preco = produto->preco;
+    pedido->idCliente = idCliente;
+    pedido->idProduto = produto->id;
+    pedido->idEntregador = produto->idEntregador;
+    strcpy(pedido->descricao, produto->descricao);
+    pedido->origem = produto->origem;
+    grafo_listar(&sistema->rotas);
+    pedido->destino = ler_inteiro("ID do local de destino: ");
+    pedido->prioridade = ler_inteiro("Prioridade (1 baixa, 2 media, 3 alta): ");
+    pedido->estado = PENDENTE;
+    pedido->qtd = quantidade;
+    pedido->qtd_cliente.id_cliente = idCliente;
+    pedido->qtd_cliente.qtd = quantidade;
+    pedido->comprado = 1;
+    pedido->telefone_vendedor = produto->telefone_vendedor;
+    pedido->telefone_cliente = NULL;
+
+    produto->qtd -= quantidade;
+
+    if (hash_inserir(&sistema->encomendas, pedido->id, pedido) && fila_enfileirar(&sistema->pendentes, pedido->id)) {
         printf("Encomenda criada com sucesso e enviada para a fila da empresa.\n");
     } else {
-        encomenda->idCliente = -1;
-        encomenda->destino = -1;
-        encomenda->prioridade = 0;
-        encomenda->estado = LIVRE;
-        encomenda->comprado = 0;
+        produto->qtd += quantidade;
+        free(pedido);
         printf("Erro ao encomendar.\n");
     }
 }
@@ -552,7 +605,7 @@ void listar_produtos(HashTable *encomendas, Lista *idencomendas){
     NoLista *aux = idencomendas->id_lista;
     while (aux){
         Encomenda *encomenda = hash_buscar(encomendas, aux->id);
-        if (encomenda != NULL && encomenda->comprado == 0) {
+        if (encomenda != NULL && encomenda->idCliente == -1 && encomenda->idProduto == -1 && encomenda->qtd > 0) {
             imprimir_encomenda_cliente(encomenda);
         }
         aux = aux->prox;
@@ -573,7 +626,7 @@ void listar_produtos_vendedor(HashTable *encomendas, Lista *idencomendas, int id
     NoLista *aux = idencomendas->id_lista;
     while (aux){
         Encomenda *encomenda = hash_buscar(encomendas, aux->id);
-        if (encomenda != NULL && encomenda->idEntregador == idvendedor) {
+        if (encomenda != NULL && encomenda->idCliente == -1 && encomenda->idProduto == -1 && encomenda->idEntregador == idvendedor) {
             imprimir_encomenda_vendedor(encomenda);
         }
         aux = aux->prox;
@@ -596,7 +649,7 @@ int listar_encomendas_cliente(Sistema *sistema, int idCliente) {
         no = sistema->encomendas.tabela[i];
         while (no != NULL) {
             encomenda = no->dado;
-            if (encomenda->idCliente == idCliente) {
+            if (encomenda->idCliente == idCliente && encomenda->idProduto != -1) {
                 imprimir_encomenda(encomenda);
                 encontrou = 1;
             }
@@ -629,7 +682,7 @@ int listar_encomendas_entregador(Sistema *sistema, int idEntregador) {
         no = sistema->encomendas.tabela[i];
         while (no != NULL) {
             encomenda = no->dado;
-            if (encomenda->idEntregador == idEntregador) {
+            if (encomenda->idEntregador == idEntregador && encomenda->idProduto != -1) {
                 if (encomenda->comprado == 1){
                     imprimir_encomenda(encomenda);
                     encontrou = 1;
@@ -680,7 +733,7 @@ void cancelar_encomenda_cliente(Sistema *sistema, int idCliente) {
     int id = ler_inteiro("ID da encomenda: ");
     Encomenda *encomenda = hash_buscar(&sistema->encomendas, id);
 
-    if (encomenda == NULL || encomenda->idCliente != idCliente) {
+    if (encomenda == NULL || encomenda->idCliente != idCliente || encomenda->idProduto == -1) {
         printf("Encomenda nao encontrada para este cliente.\n");
         return;
     }
@@ -688,6 +741,11 @@ void cancelar_encomenda_cliente(Sistema *sistema, int idCliente) {
     if (encomenda->estado != PENDENTE) {
         printf("Apenas encomendas pendentes podem ser canceladas pelo cliente.\n");
         return;
+    }
+
+    Encomenda *produto = hash_buscar(&sistema->encomendas, encomenda->idProduto);
+    if (produto != NULL) {
+        produto->qtd += encomenda->qtd;
     }
 
     encomenda->estado = CANCELADA;
@@ -708,7 +766,7 @@ void consultar_rota_encomenda_entregador(Sistema *sistema, int idEntregador) {
     int i;
     Encomenda *encomenda = hash_buscar(&sistema->encomendas, id);
 
-    if (encomenda == NULL || encomenda->idEntregador != idEntregador) {
+    if (encomenda == NULL || encomenda->idEntregador != idEntregador || encomenda->idProduto == -1) {
         printf("Encomenda nao encontrada para este entregador.\n");
         return;
     }

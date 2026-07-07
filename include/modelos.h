@@ -1,6 +1,6 @@
 #ifndef MODELOS_H
 #define MODELOS_H
-
+#define ll long int
 /* Tamanho máximo para nomes de clientes, vendedores e produtos */
 #define TAM_NOME 80
 
@@ -63,12 +63,18 @@ typedef struct{
 } Admin;
 
 /* Estrutura que armazena informações completas de uma encomenda */
+
+typedef struct{
+    ll qtd;
+    int id_cliente;
+}Produto_qtd;
 typedef struct {
     char nome_produto[TAM_NOME];     /* Nome descritivo do produto na encomenda */
     char *telefone_vendedor;         /* telefone do vendedor*/
     char *telefone_cliente;          /* telefone do cliente*/
     int id;                          /* Identificador único da encomenda */
-    int idCliente;                   /* ID do cliente que encomendou */
+    int idCliente;                   /* ID do cliente que encomendou; -1 para produtos em venda */
+    int idProduto;                   /* ID do produto base associado ao pedido; -1 para produtos em venda */
     int idEntregador;                /* ID do vendedor/entregador atribuído */
     char descricao[TAM_TEXTO];       /* Descrição detalhada do produto */
     int origem;                      /* ID do local de origem (armazém) */
@@ -76,6 +82,8 @@ typedef struct {
     int prioridade;                  /* Nível de prioridade da entrega (quanto menor, maior prioridade) */
     double preco;                    /* Preço da encomenda em Kwanza (moeda local) */
     int comprado;                    /* Flag indicando se a encomenda foi paga/confirmada */
+    ll qtd;
+    Produto_qtd qtd_cliente;                   
     EstadoEncomenda estado;          /* Estado atual da encomenda no sistema */
 } Encomenda;
 
