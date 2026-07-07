@@ -50,7 +50,7 @@ int is_numeric(char *str){
     int     i = 0;
     while (str[i]){
         /* Verifica se caractere NÃO é dígito (ASCII 48-57 são '0'-'9') */
-        if (str[i] < 48 || str[i > 57])     /* BUG: str[i > 57] deveria ser str[i] > 57 */
+        if (str[i] < 48 || str[i] > 57)
             return (0);                      /* Retorna 0 se não é numérico */
         i++;
     }
