@@ -259,7 +259,7 @@ void cadastrar_cliente(Sistema *sistema) {
     }
 
     cliente->idade = ler_inteiro("Idade: ");
-    if (cliente->idade <= 0 || cliente->idade > 120) {
+    if (cliente->idade <= 17){
         printf("Erro: idade invalida.\n");
         free(cliente);
         return;
