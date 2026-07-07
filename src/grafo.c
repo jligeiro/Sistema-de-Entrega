@@ -1,7 +1,7 @@
 /*
  * Ficheiro: grafo.c
- * Implementa operações sobre um grafo de locais e rotas.
- * Permite adicionar locais, criar ligações e calcular caminhos.
+ * Implementa operacoes sobre um grafo de locais e rotas.
+ * Permite adicionar locais, criar ligacoes e calcular caminhos.
  */
 
 #include <stdio.h>
@@ -11,7 +11,7 @@
 #include "grafo.h"
 #include "utils.h"
 
-/* Procura se um local já existe no grafo. */
+/* Procura se um local ja existe no grafo. */
 int grafo_verificar_local(Grafo *grafo, char *local){
     int id = 0;
     char *grafo_local;
@@ -26,7 +26,7 @@ int grafo_verificar_local(Grafo *grafo, char *local){
     return (0);
 }
 
-/* Inicializa o grafo sem locais ou ligações. */
+/* Inicializa o grafo sem locais ou ligacoes. */
 void grafo_inicializar(Grafo *grafo) {
     int i;
     grafo->total = 0;
@@ -54,7 +54,7 @@ int grafo_adicionar_local(Grafo *grafo, const char *nome) {
     return id;
 }
 
-/* Cria uma ligação entre dois locais. */
+/* Cria uma ligacao entre dois locais. */
 int adicionar_aresta(Grafo *grafo, int origem, int destino, int distancia) {
     Aresta *nova;
 
@@ -87,7 +87,7 @@ int grafo_adicionar_rota(Grafo *grafo, int origem, int destino, int distancia) {
     return 1;
 }
 
-/* Lista todos os locais e ligações. */
+/* Lista todos os locais e ligacoes. */
 void grafo_listar(Grafo *grafo) {
     int i;
     Aresta *atual;
@@ -106,7 +106,7 @@ void grafo_listar(Grafo *grafo) {
         }
         printf("\n");
     }
-    Sleep(3000);
+    Sleep(800);
 }
 
 /* Calcula o menor caminho entre dois locais. */
@@ -175,7 +175,7 @@ int grafo_menor_caminho(Grafo *grafo, int origem, int destino, int caminho[], in
     return dist[destino];
 }
 
-/* Liberta a memória das ligações do grafo. */
+/* Liberta a memoria das ligacoes do grafo. */
 void grafo_liberar(Grafo *grafo) {
     int i;
     Aresta *atual;

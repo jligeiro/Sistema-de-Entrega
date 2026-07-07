@@ -1,6 +1,6 @@
 /*
  * Ficheiro: ficheiro.c
- * Contém funções responsáveis por guardar e carregar dados do sistema
+ * Contem funcoes responsaveis por guardar e carregar dados do sistema
  * em ficheiros de texto, incluindo clientes, entregadores, encomendas e rotas.
  */
 
@@ -55,16 +55,17 @@ void guardar_encomendas(HashTable *encomendas, FILE *arquivo) {
         no = encomendas->tabela[i];
         while (no != NULL) {
             encomenda = no->dado;
-            fprintf(arquivo, "%s;%d;%d;%d;%s;%d;%d;%d;%lf;%d;%ld;%d\n",
+            fprintf(arquivo, "%s;%d;%d;%d;%s;%d;%d;%d;%lf;%d;%ld;%ld;%d;%d;%d\n",
                     encomenda->nome_produto, encomenda->id, encomenda->idCliente, encomenda->idEntregador,
                     encomenda->descricao, encomenda->origem, encomenda->destino,
-                    encomenda->prioridade, encomenda->preco, encomenda->estado, encomenda->qtd, encomenda->idProduto);
+                    encomenda->prioridade, encomenda->preco, encomenda->estado, encomenda->qtd,
+                    encomenda->qtd_cliente.qtd, encomenda->qtd_cliente.id_cliente, encomenda->comprado, encomenda->idProduto);
             no = no->proximo;
         }
     }
 }
 
-/* Guarda a informação do grafo de rotas. */
+/* Guarda a informacao do grafo de rotas. */
 void guardar_rotas(Grafo *grafo, FILE *arquivo){
     Grafo *aux = grafo;
     Aresta *aresta;
@@ -80,7 +81,7 @@ void guardar_rotas(Grafo *grafo, FILE *arquivo){
     }
 }
 
-/* Abre ficheiros e executa o processo completo de gravação. */
+/* Abre ficheiros e executa o processo completo de gravacao. */
 int ficheiro_guardar_dados(Sistema *sistema) {
     FILE *clientes = fopen("clientes.txt", "w");
     FILE *vendedores = fopen("entregadores.txt", "w");
@@ -98,6 +99,11 @@ int ficheiro_guardar_dados(Sistema *sistema) {
         if (rotas != NULL) fclose(rotas);
         return 0;
     }
+
+    fprintf(clientes, "#VERSAO=2\n");
+    fprintf(vendedores, "#VERSAO=2\n");
+    fprintf(encomendas, "#VERSAO=2\n");
+    fprintf(rotas, "#VERSAO=2\n");
 
     guardar_clientes(&sistema->clientes, clientes);
     guardar_entregadores(&sistema->vendedores, vendedores);
@@ -144,6 +150,10 @@ void carregar_clientes(Sistema *sistema) {
     }
 
     while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        if (linha[0] == '#') {
+            continue;
+        }
+
         cliente = malloc(sizeof(Cliente));
         if (cliente == NULL) {
             break;
@@ -176,6 +186,10 @@ void carregar_entregadores(Sistema *sistema) {
     }
 
     while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        if (linha[0] == '#') {
+            continue;
+        }
+
         vendedores = malloc(sizeof(Vendedor));
         if (vendedores == NULL) {
             break;
@@ -209,12 +223,33 @@ void carregar_encomendas(Sistema *sistema) {
     }
 
     while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        if (linha[0] == '#') {
+            continue;
+        }
+
         encomenda = malloc(sizeof(Encomenda));
         if (encomenda == NULL) {
             break;
         }
 
-        if (sscanf(linha, "%79[^;];%d;%d;%d;%119[^;];%d;%d;%d;%lf;%d;%ld;%d",
+        memset(encomenda, 0, sizeof(*encomenda));
+
+        if (sscanf(linha, "%79[^;];%d;%d;%d;%119[^;];%d;%d;%d;%lf;%d;%ld;%ld;%d;%d;%d",
+                   encomenda->nome_produto, &encomenda->id, &encomenda->idCliente, &encomenda->idEntregador,
+                   encomenda->descricao, &encomenda->origem, &encomenda->destino,
+                   &encomenda->prioridade, &encomenda->preco, &estado, &encomenda->qtd,
+                   &encomenda->qtd_cliente.qtd, &encomenda->qtd_cliente.id_cliente, &encomenda->comprado, &encomenda->idProduto) == 15) {
+            encomenda->estado = (EstadoEncomenda)estado;
+            encomenda->telefone_vendedor = NULL;
+            encomenda->telefone_cliente = NULL;
+            hash_inserir(&sistema->encomendas, encomenda->id, encomenda);
+            if (encomenda->idCliente == -1 && encomenda->idProduto == -1) {
+                lista_inserir(&sistema->id_encomendas, encomenda->id);
+            }
+            if (encomenda->estado == PENDENTE) {
+                fila_enfileirar(&sistema->pendentes, encomenda->id);
+            }
+        } else if (sscanf(linha, "%79[^;];%d;%d;%d;%119[^;];%d;%d;%d;%lf;%d;%ld;%d",
                    encomenda->nome_produto, &encomenda->id, &encomenda->idCliente, &encomenda->idEntregador,
                    encomenda->descricao, &encomenda->origem, &encomenda->destino,
                    &encomenda->prioridade, &encomenda->preco, &estado, &encomenda->qtd, &encomenda->idProduto) == 12) {
@@ -222,6 +257,8 @@ void carregar_encomendas(Sistema *sistema) {
             encomenda->comprado = (encomenda->estado != LIVRE);
             encomenda->qtd_cliente.qtd = (encomenda->idCliente == -1) ? 0 : encomenda->qtd;
             encomenda->qtd_cliente.id_cliente = (encomenda->idCliente == -1) ? -1 : encomenda->idCliente;
+            encomenda->telefone_vendedor = NULL;
+            encomenda->telefone_cliente = NULL;
             hash_inserir(&sistema->encomendas, encomenda->id, encomenda);
             if (encomenda->idCliente == -1 && encomenda->idProduto == -1) {
                 lista_inserir(&sistema->id_encomendas, encomenda->id);
@@ -239,6 +276,8 @@ void carregar_encomendas(Sistema *sistema) {
             encomenda->idProduto = -1;
             encomenda->qtd_cliente.qtd = 0;
             encomenda->qtd_cliente.id_cliente = -1;
+            encomenda->telefone_vendedor = NULL;
+            encomenda->telefone_cliente = NULL;
             hash_inserir(&sistema->encomendas, encomenda->id, encomenda);
             if (encomenda->idCliente == -1 && encomenda->idProduto == -1) {
                 lista_inserir(&sistema->id_encomendas, encomenda->id);

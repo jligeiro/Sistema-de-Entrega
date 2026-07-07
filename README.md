@@ -7,7 +7,7 @@ Projeto de Estrutura de Dados II implementado em C.
 - Grafo: representa os locais e as rotas entre pontos de entrega.
 - Hash table: permite pesquisar clientes, entregadores e encomendas por ID.
 - Fila: gere as encomendas pendentes por ordem de chegada.
-- Lista ligada: usada nas colisões da hash table e na fila, para armazenar o id de todos os produtos disponiveis para encomenda.
+- Lista ligada: usada nas colisoes da hash table e na fila, para armazenar o id de todos os produtos disponiveis para encomenda.
 
 ## Perfis do sistema
 

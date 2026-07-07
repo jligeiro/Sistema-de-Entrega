@@ -17,7 +17,7 @@ void lista_inicializar(Lista *lista) {
     lista->total = 0;
 }
 
-/* Verifica se a lista está vazia. */
+/* Verifica se a lista esta vazia. */
 int lista_vazia(Lista *lista){
     return (lista->id_lista == NULL);
 }

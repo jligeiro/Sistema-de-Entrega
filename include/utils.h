@@ -1,36 +1,36 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-/* Calcula o comprimento (número de caracteres) de uma string */
-/* Equivalente a função strlen da biblioteca padrão */
+/* Calcula o comprimento (numero de caracteres) de uma string */
+/* Equivalente a funcao strlen da biblioteca padrao */
 int ft_strlen(char *str);
 
-/* Converte todos os caracteres de uma string para minúsculas */
+/* Converte todos os caracteres de uma string para minusculas */
 /* Retorna a string convertida */
 char *ft_tolower(char *str);
 
-/* Verifica se uma string contém apenas dígitos numéricos (0-9) */
-/* Retorna 1 se string é numérica, 0 caso contrário */
+/* Verifica se uma string contem apenas digitos numericos (0-9) */
+/* Retorna 1 se string e numerica, 0 caso contrario */
 int is_numeric(char *str);
 
 /* Limpa o buffer de entrada (stdin) removendo caracteres pendentes */
-/* Útil para evitar problemas com input incorretos */
+/* Util para evitar problemas com input incorretos */
 void limpar_buffer(void);
 
-/* Lê um texto da entrada do utilizador e armazena num destino com limite de tamanho */
+/* Le um texto da entrada do utilizador e armazena num destino com limite de tamanho */
 /* Exibe uma mensagem de prompt antes de ler */
 void ler_texto(const char *mensagem, char *destino, int tamanho);
 
-/* Lê um número inteiro da entrada do utilizador */
-/* Exibe uma mensagem de prompt e valida que input é numérico */
+/* Le um numero inteiro da entrada do utilizador */
+/* Exibe uma mensagem de prompt e valida que input e numerico */
 int ler_inteiro(const char *mensagem);
 
-/* Pausa a execução do programa até que o utilizador pressione uma tecla */
+/* Pausa a execucao do programa ate que o utilizador pressione uma tecla */
 /* Util para criar pausas entre menus */
 void pausar(void);
 
-/* Converte um código numérico de estado de encomenda para texto descritivo */
-/* Retorna string com o nome do estado (ex: "Pendente", "Em Trânsito", "Entregue") */
+/* Converte um codigo numerico de estado de encomenda para texto descritivo */
+/* Retorna string com o nome do estado (ex: "Pendente", "Em Transito", "Entregue") */
 const char *estado_para_texto(int estado);
 
 #endif

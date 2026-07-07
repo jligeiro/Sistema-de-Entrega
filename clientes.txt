@@ -1,2 +1,3 @@
+#VERSAO=2
 525;Dulce;dulce;dulce;22;00000000000;viana;1
 853;Erick;jligeiro;Ligeiro20241512&;23;943975639;gamek;1

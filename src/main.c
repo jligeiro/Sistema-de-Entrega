@@ -1,8 +1,8 @@
 /* ==============================================================
    FICHEIRO: main.c
-   DESCRIÇÃO: Função principal do sistema de gestão de entregas
+   DESCRICAO: Funcao principal do sistema de gestao de entregas
    FUNCIONALIDADE: Inicializa o sistema, carrega dados, e gerencia 
-                   o menu principal de login/criação de conta
+                   o menu principal de login/criacao de conta
    ============================================================== */
 
 #include <stdbool.h>
@@ -13,18 +13,18 @@
 #include "ficheiro.h"
 
 /*
- * FUNÇÃO: main
- * RETORNO: int (0 se execução bem-sucedida)
- * DESCRIÇÃO: 
+ * FUNCAO: main
+ * RETORNO: int (0 se execucao bem-sucedida)
+ * DESCRICAO: 
  *   - Inicializa a estrutura de dados do sistema
  *   - Carrega dados salvos em ficheiro
- *   - Loop principal que gerencia login, criação de conta e saída
+ *   - Loop principal que gerencia login, criacao de conta e saida
  *   - Salva dados antes de encerrar
  */
 int main(void) {
-    /* Declaração de variáveis */
-    Sistema sistema;           /* Estrutura que contém todos os dados do sistema */
-    int     opcao;             /* Variável para armazenar opção do utilizador */
+    /* Declaracao de variaveis */
+    Sistema sistema;           /* Estrutura que contem todos os dados do sistema */
+    int     opcao;             /* Variavel para armazenar opcao do utilizador */
 
     /* Inicializa as estruturas de dados do sistema
        (hash tables, filas, listas, grafo) */
@@ -39,16 +39,16 @@ int main(void) {
     
     /* Loop principal do sistema */
     while (true){
-        /* Menu de login/criação de conta retorna opção (1, 2 ou 3) */
+        /* Menu de login/criacao de conta retorna opcao (1, 2 ou 3) */
         opcao = sistem_criarConta(&sistema);
         
-        /* Opção 2: Realizar login */
+        /* Opcao 2: Realizar login */
         if (opcao == 2){
             system("cls");                      /* Limpa a tela */
-            sistema_login(&sistema);            /* Função de login */
-            Sleep(2000);                        /* Pausa de 2 segundos */
+            sistema_login(&sistema);            /* Funcao de login */
+            Sleep(700);                        /* Pausa de 2 segundos */
         }
-        /* Opção 3: Sair do sistema */
+        /* Opcao 3: Sair do sistema */
         else if (opcao == 3){
             system("cls");
             
@@ -60,10 +60,10 @@ int main(void) {
                 printf("Erro ao guardar dados.\n");
             }
             
-            /* Libera a memória alocada */
+            /* Libera a memoria alocada */
             sistema_liberar(&sistema);
             printf("A sair do sistema...\n");
-            Sleep(2000);
+            Sleep(700);
             break;                              /* Sai do loop principal */
         }
     }

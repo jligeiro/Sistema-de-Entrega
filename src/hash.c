@@ -1,7 +1,7 @@
 /*
  * Ficheiro: hash.c
  * Implementa uma tabela hash com listas ligadas para armazenar dados.
- * Inclui inserção, pesquisa, remoção e libertação de memória.
+ * Inclui insercao, pesquisa, remocao e libertacao de memoria.
  */
 
 #include <stdio.h>
@@ -12,7 +12,7 @@
 
 #define ll long int
 
-/* Calcula o índice da tabela hash para uma chave. */
+/* Calcula o indice da tabela hash para uma chave. */
 int funcao_hash(int chave) {
     if (chave < 0) {
         chave = -chave;
@@ -29,7 +29,7 @@ void hash_inicializar(HashTable *hash, TipoDado tipo) {
     }
 }
 
-/* Converte um nome de utilizador para um valor numérico. */
+/* Converte um nome de utilizador para um valor numerico. */
 int converter_username(char *username){
     ll username_para_id = 0;
     int     contador = 0;
@@ -124,10 +124,10 @@ void hash_listar(HashTable *hash, void (*imprimir)(void *)) {
         printf("Sem resgistro.\n");
         return;
     }
-    Sleep(3000);
+    Sleep(800);
 }
 
-/* Liberta toda a memória da tabela hash. */
+/* Liberta toda a memoria da tabela hash. */
 void hash_liberar(HashTable *hash) {
     int i;
     NoHash *atual;

@@ -1,7 +1,7 @@
 /*
  * Ficheiro: fila.c
  * Implementa uma estrutura de dados do tipo fila (FIFO).
- * É usada para gerir elementos pendentes por ordem de chegada.
+ * E usada para gerir elementos pendentes por ordem de chegada.
  */
 
 #include <stdio.h>
@@ -16,7 +16,7 @@ void fila_inicializar(Fila *fila) {
     fila->tamanho = 0;
 }
 
-/* Verifica se a fila não contém elementos. */
+/* Verifica se a fila nao contem elementos. */
 int fila_vazia(Fila *fila) {
     return fila->inicio == NULL;
 }
@@ -78,10 +78,10 @@ void fila_listar(Fila *fila) {
         atual = atual->proximo;
     }
     printf("\n");
-    Sleep(3000);
+    Sleep(800);
 }
 
-/* Liberta a memória ocupada pela fila. */
+/* Liberta a memoria ocupada pela fila. */
 void fila_liberar(Fila *fila) {
     int id;
     while (fila_desenfileirar(fila, &id));
